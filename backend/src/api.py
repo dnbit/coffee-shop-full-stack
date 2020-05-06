@@ -26,7 +26,8 @@ def get_drinks():
 
     try:
         drinks = Drink.query.all()
-    except:
+    except Exception as e:
+        print(e)
         abort(500)
 
     formatted_drinks = [drink.short() for drink in drinks]
@@ -57,7 +58,8 @@ def get_drinks_details(payload):
 
     try:
         drinks = Drink.query.all()
-    except:
+    except Exception as e:
+        print(e)
         abort(500)
 
     formatted_drinks = [drink.long() for drink in drinks]
@@ -66,16 +68,33 @@ def get_drinks_details(payload):
     return jsonify(result)
 
 
-'''
-@TODO implement endpoint
-    POST /drinks
-        it should create a new row in the drinks table
-        it should require the 'post:drinks' permission
-        it should contain the drink.long() data representation
-    returns status code 200 and json {"success": True, "drinks": drink}
-    where drink an array containing only the newly created drink
-        or appropriate status code indicating reason for failure
-'''
+@app.route('/drinks', methods=['POST'])
+@requires_auth(permission='post:drinks')
+def create_new_drink(payload):
+    drinks = []
+    result = {
+        "success": True,
+    }
+
+    body = json.loads(request.data)
+
+    try:
+        title = body['title']
+        recipe = []
+        recipe.append(body['recipe'])
+
+        new_drink = Drink(title=title, recipe=json.dumps(recipe))
+        new_drink.insert()
+
+        drinks.append(new_drink.long())
+
+    except Exception as e:
+        print(e)
+        abort(500)
+
+    result['drinks'] = drinks
+
+    return jsonify(result)
 
 
 '''
