@@ -14,19 +14,10 @@ CORS(app)
 # db_drop_and_create_all()
 
 # ROUTES
-'''
-@TODO implement endpoint
-    GET /drinks
-        it should be a public endpoint
-        it should contain only the drink.short() data representation
-    returns status code 200 and json {"success": True, "drinks": drinks}
-    where drinks is the list of drinks
-        or appropriate status code indicating reason for failure
-'''
 
 
 @app.route('/drinks', methods=['GET'])
-def get_categories():
+def get_drinks():
     drinks = []
 
     result = {
@@ -53,6 +44,26 @@ def get_categories():
     where drinks is the list of drinks
         or appropriate status code indicating reason for failure
 '''
+
+
+@app.route('/drinks-detail', methods=['GET'])
+@requires_auth(permission='get:drinks-detail')
+def get_drinks_details(payload):
+    drinks = []
+
+    result = {
+        "success": True,
+    }
+
+    try:
+        drinks = Drink.query.all()
+    except:
+        abort(500)
+
+    formatted_drinks = [drink.long() for drink in drinks]
+    result['drinks'] = formatted_drinks
+
+    return jsonify(result)
 
 
 '''
@@ -124,7 +135,10 @@ def unprocessable(error):
     }), 500
 
 
-'''
-@TODO implement error handler for AuthError
-    error handler should conform to general task above
-'''
+@app.errorhandler(AuthError)
+def auth_error(error):
+    return jsonify({
+        "success": False,
+        "error": error.status_code,
+        "message": error.error['description']
+    }), error.status_code
