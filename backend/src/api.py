@@ -18,20 +18,18 @@ CORS(app)
 
 @app.route('/drinks', methods=['GET'])
 def get_drinks():
-    drinks = []
-
     result = {
         "success": True,
     }
 
     try:
         drinks = Drink.query.all()
+
+        formatted_drinks = [drink.short() for drink in drinks]
+        result['drinks'] = formatted_drinks
     except Exception as e:
         print(e)
         abort(500)
-
-    formatted_drinks = [drink.short() for drink in drinks]
-    result['drinks'] = formatted_drinks
 
     return jsonify(result)
 
@@ -65,12 +63,11 @@ def create_new_drink(payload):
         "success": True,
     }
 
-    body = json.loads(request.data)
-
     try:
+        body = json.loads(request.data)
+
         title = body['title']
-        recipe = []
-        recipe.append(body['recipe'])
+        recipe = body['recipe']
 
         new_drink = Drink(title=title, recipe=json.dumps(recipe))
         new_drink.insert()
@@ -108,9 +105,7 @@ def update_drink(payload, id):
             drink.title = title
 
         if recipe:
-            recipe_array = []
-            recipe_array.append(recipe)
-            drink.recipe = json.dumps(recipe_array)
+            drink.recipe = json.dumps(recipe)
 
         drink.update()
 
@@ -133,7 +128,7 @@ def delete_drink(payload, id):
         'delete': id
     }
 
-    drink = Drink.query.filter(Drink.id == id).one_or_none()   
+    drink = Drink.query.filter(Drink.id == id).one_or_none()
     if not drink:
         abort(404)
 
