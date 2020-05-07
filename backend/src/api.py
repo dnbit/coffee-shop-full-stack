@@ -36,17 +36,6 @@ def get_drinks():
     return jsonify(result)
 
 
-'''
-@TODO implement endpoint
-    GET /drinks-detail
-        it should require the 'get:drinks-detail' permission
-        it should contain the drink.long() data representation
-    returns status code 200 and json {"success": True, "drinks": drinks}
-    where drinks is the list of drinks
-        or appropriate status code indicating reason for failure
-'''
-
-
 @app.route('/drinks-detail', methods=['GET'])
 @requires_auth(permission='get:drinks-detail')
 def get_drinks_details(payload):
@@ -105,13 +94,15 @@ def update_drink(payload, id):
         "success": True,
     }
 
-    body = json.loads(request.data)
-    print(id)
+    drink = Drink.query.filter(Drink.id == id).one_or_none()
+    if not drink:
+        abort(404)
+
     try:
+        body = json.loads(request.data)
+
         title = body.get('title')
         recipe = body.get('recipe')
-
-        drink = Drink.query.filter(Drink.id == id).one_or_none()
 
         if title:
             drink.title = title
@@ -134,22 +125,27 @@ def update_drink(payload, id):
     return jsonify(result)
 
 
-'''
-@TODO implement endpoint
-    DELETE /drinks/<id>
-        where <id> is the existing model id
-        it should respond with a 404 error if <id> is not found
-        it should delete the corresponding row for <id>
-        it should require the 'delete:drinks' permission
-    returns status code 200 and json {"success": True, "delete": id}
-    where id is the id of the deleted record
-        or appropriate status code indicating reason for failure
-'''
+@app.route('/drinks/<id>', methods=['DELETE'])
+@requires_auth(permission='delete:drinks')
+def delete_drink(payload, id):
+    result = {
+        "success": True,
+        'delete': id
+    }
+
+    drink = Drink.query.filter(Drink.id == id).one_or_none()   
+    if not drink:
+        abort(404)
+
+    try:
+        drink.delete()
+    except Exception as e:
+        abort(500)
+
+    return jsonify(result)
 
 
 # Error Handling
-
-
 @app.errorhandler(422)
 def unprocessable(error):
     return jsonify({
